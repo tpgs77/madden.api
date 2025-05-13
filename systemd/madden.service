@@ -1,0 +1,21 @@
+[Unit]
+Description=Madden Companion Export API
+After=network.target
+
+[Service]
+# Кто запускает
+User=root
+Group=root
+
+# Рабочий каталог: publish → тогда DataPath = ../Data → /opt/madden_api/Data
+WorkingDirectory=/opt/madden_api/publish
+
+# Запуск Kestrel
+ExecStart=/usr/bin/dotnet /opt/madden_api/publish/Madden.Api.dll \
+  --urls http://0.0.0.0:5268
+
+# Перезапуск при падении
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
