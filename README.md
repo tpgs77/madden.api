@@ -11,7 +11,6 @@
   - [3. Настройка systemd](#3-настройка-systemd)
   - [4. Конфигурация Nginx](#4-конфигурация-nginx)
 - [Маршруты API](#маршруты-api)
-- [Генерация CSV](#генерация-csv)
 - [Проверка работоспособности](#проверка-работоспособности)
 
 Требования
@@ -112,10 +111,6 @@ sudo nginx -t && sudo systemctl reload nginx
 - `POST /{username}/{platform}/{league}/team/{team}/roster` — roster-{team}.json
 - `POST /{username}/{platform}/{league}/week/{stage}/{week}/schedules` — schedules.json
 - `POST /{username}/{platform}/{league}/week/{stage}/{week}/{stat}` — stats/{stat}.json
-
-## 🗜 Генерация CSV
-- `GET /{username}/{platform}/{league}/csv/teams` — CSV из \`leagueTeamInfoList\` teams.json
-- `GET /{username}/{platform}/{league}/csv/freeagents` — CSV из \`rosterInfoList\` freeagents.json
 
 ## ✔️ Проверка работоспособности
 ```bash
