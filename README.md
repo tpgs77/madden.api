@@ -1,46 +1,125 @@
-# Madden Web Api
+Madden Companion Export API
 
-This is a minimal web api that will download franchise data from the Madden Companion mobile app.
+Этот репозиторий содержит Madden Companion Export API — простой сервис на ASP.NET Core, который принимает POST-запросы из приложения Madden Companion и сохраняет данные в JSON-файлы, а также предоставляет динамическую генерацию CSV.
 
-It can be run from the command line with `dotnet run`. By default it will download the data in folder named `Data`, (download location can be changed by modifing the `DataPath` variable)
+📋 Содержание
 
-The data will be saved in json files.
+Требования
 
-This api will only download the raw files from your league.
+Структура репозитория
 
-## Configuration
+Установка и запуск
 
-1. Change the local address and/or port number in `Madden.Api/Properties/launchSettings.json` to the ip address of the computer you are running this from and any open port.
+1. Клонирование и подготовка
 
-   ```json
-   {
-     "profiles": {
-        "MaddenApi": {
-           "commandName": "Project",
-           "dotnetRunMessages": true,
-           "launchBrowser": true,
-           "launchUrl": "swagger",
-           "applicationUrl": "https://localhost:7083;http://{local-ip-address}:{local-port}",
-           "environmentVariables": {
-           "ASPNETCORE_ENVIRONMENT": "Development"
-           }
-        }
-     }
-   }
-   ```
+2. Сборка и публикация
 
-2. Run `dotnet run` from the root folder
+3. Настройка systemd
 
-3. The first time it's run, you should be prompted to allow access for the web api; allow access.
+4. Конфигурация Nginx
 
-4. Unless your computer is in the DMZ, you'll probably have to configure a port forward in your router to forward port 3000 to your local ip address.
+Маршруты API
 
-## Testing
+Генерация CSV
 
-You can test the api but opening the [swagger](https://localhost:7083/swagger/index.html) test page _(if you changed the address in the launchSettings.json file update this url to match)_.
+Проверка работоспособности
 
-## Exporting
+🛠 Требования
 
-When running the Madden Companion App, you will need to know your external ip address. One way to find this out is to browse to [WhatIsMyIPAddress.com](https://whatismyipaddress.com). Whatever your external ip address is, is what you will point the Maddan Companion App to.
+Debian 12+ / Ubuntu 20.04+
 
-> For example: if your external ip address is `95.44.142.106` and the port you configured the app to run on is `5268`, then you would use `http://95.44.142.106:5268`.
+.NET SDK 7.0
+
+Nginx
+
+systemd
+
+(Опционально) домен или nip.io-домен для HTTPS
+
+📁 Структура репозитория
+
+/opt/madden_api/
+├─ src/                  # Исходники ASP.NET Core
+│  └─ Program.cs
+├─ publish/              # Папка публикации (dotnet publish)
+└─ nginx/
+   └─ madden.conf        # Конфиг Nginx для проксирования
+
+🚀 Установка и запуск
+
+1. Клонирование и подготовка
+
+sudo mkdir -p /opt/madden_api
+sudo chown $USER:$USER /opt/madden_api
+cd /opt/madden_api
+git clone <URL_РЕПОЗИТОРИЯ> src
+
+2. Сборка и публикация
+
+cd src
+# Убедитесь, что в csproj указан <TargetFramework>net7.0</TargetFramework>
+dotnet publish -c Release -o ../publish
+
+3. Настройка systemd
+
+Создайте файл /etc/systemd/system/madden.service:
+
+[Unit]
+Description=Madden Companion Export API
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/madden_api/publish
+ExecStart=/usr/bin/dotnet /opt/madden_api/publish/Madden.Api.dll --urls http://0.0.0.0:5268
+Restart=always
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now madden.service
+
+4. Конфигурация Nginx
+
+Скопируйте nginx/madden.conf в /etc/nginx/sites-available/, активируйте и перезагрузите:
+
+sudo ln -sf /opt/madden_api/nginx/madden.conf /etc/nginx/sites-enabled/madden
+sudo nginx -t && sudo systemctl reload nginx
+
+В конфиге используется HTTPS для домена 109-172-37-234.nip.io. Замените на свой.
+
+🔌 Маршруты API
+
+POST /{username}/{platform}/{league}/leagueteams — сохраняет teams.json
+
+POST /{username}/{platform}/{league}/standings — standings.json
+
+POST /{username}/{platform}/{league}/freeagents/roster — freeagents.json
+
+POST /{username}/{platform}/{league}/team/{team}/roster — roster-{team}.json
+
+POST /{username}/{platform}/{league}/week/{stage}/{week}/schedules — schedules.json
+
+POST /{username}/{platform}/{league}/week/{stage}/{week}/{stat} — stats/{stat}.json
+
+🗜 Генерация CSV
+
+GET /{username}/{platform}/{league}/csv/teams — собирает CSV из leagueTeamInfoList в teams.json
+
+GET /{username}/{platform}/{league}/csv/freeagents — CSV из rosterInfoList в freeagents.json
+
+✔️ Проверка работоспособности
+
+# Здоровье сервиса
+curl -i https://<host>/     # Madden Companion Export API is up
+
+# Пример POST
+curl -i -X POST https://<host>/<user>/pc/4110445/leagueteams \
+  -H 'Content-Type: application/json' \
+  -d '{"leagueTeamInfoList":[]}';
+
+# Скачивание CSV
+curl -i https://<host>/<user>/pc/4110445/csv/teams
+
