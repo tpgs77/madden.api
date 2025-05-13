@@ -1,6 +1,6 @@
 Madden Companion Export API
 
-Этот репозиторий содержит Madden Companion Export API — простой сервис на ASP.NET Core, который принимает POST-запросы из приложения Madden Companion и сохраняет данные в JSON-файлы, а также предоставляет динамическую генерацию CSV.
+Этот репозиторий содержит Madden Companion Export API — простой сервис на ASP.NET Core, который принимает POST-запросы из приложения Madden Companion и сохраняет данные в JSON-файлы.
 
 📋 Содержание
 
@@ -28,7 +28,7 @@ Madden Companion Export API
 
 Debian 12+ / Ubuntu 20.04+
 
-.NET SDK 7.0
+.NET SDK 8.0
 
 Nginx
 
@@ -57,7 +57,7 @@ git clone <URL_РЕПОЗИТОРИЯ> src
 2. Сборка и публикация
 
 cd src
-# Убедитесь, что в csproj указан <TargetFramework>net7.0</TargetFramework>
+# Убедитесь, что в csproj указан <TargetFramework>net8.0</TargetFramework>
 dotnet publish -c Release -o ../publish
 
 3. Настройка systemd
@@ -104,11 +104,6 @@ POST /{username}/{platform}/{league}/week/{stage}/{week}/schedules — schedules
 
 POST /{username}/{platform}/{league}/week/{stage}/{week}/{stat} — stats/{stat}.json
 
-🗜 Генерация CSV
-
-GET /{username}/{platform}/{league}/csv/teams — собирает CSV из leagueTeamInfoList в teams.json
-
-GET /{username}/{platform}/{league}/csv/freeagents — CSV из rosterInfoList в freeagents.json
 
 ✔️ Проверка работоспособности
 
@@ -119,7 +114,3 @@ curl -i https://<host>/     # Madden Companion Export API is up
 curl -i -X POST https://<host>/<user>/pc/4110445/leagueteams \
   -H 'Content-Type: application/json' \
   -d '{"leagueTeamInfoList":[]}';
-
-# Скачивание CSV
-curl -i https://<host>/<user>/pc/4110445/csv/teams
-
