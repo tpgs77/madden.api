@@ -151,4 +151,48 @@ app.MapGet("/{username}/{platform}/{league:int}/csv/freeagents", (string usernam
     return JsonArrayToCsv(path, "rosterInfoList");
 });
 
+// CSV Team Rosters: конкатенируем все файлы в папке /rosters
+app.MapGet("/{username}/{platform}/{league:int}/csv/rosters", (string username, string platform, int league) =>
+{
+    var rostersDir = Path.Combine(DataRoot, username, platform, league.ToString(), "rosters");
+    if (!Directory.Exists(rostersDir))
+        return Results.NotFound();
+
+    // Собираем все объекты из JSON-файлов
+    var allItems = new List<JsonElement>();
+    foreach (var file in Directory.GetFiles(rostersDir, "*.json"))
+    {
+        using var doc = JsonDocument.Parse(File.ReadAllText(file));
+        // Если файл — массив
+        if (doc.RootElement.ValueKind == JsonValueKind.Array)
+            allItems.AddRange(doc.RootElement.EnumerateArray());
+        // Если объект с полем rosterInfoList
+        else if (doc.RootElement.TryGetProperty("rosterInfoList", out var arr))
+            allItems.AddRange(arr.EnumerateArray());
+    }
+
+    if (allItems.Count == 0)
+        return Results.Text("", "text/csv");
+
+    // Заголовки из первого элемента
+    var headers = allItems[0].EnumerateObject().Select(p => p.Name).ToList();
+    var sb = new StringBuilder();
+    sb.AppendLine(string.Join(",", headers.Select(h => $"\"{h}\"")));
+    foreach (var elem in allItems)
+    {
+        var row = headers.Select(h =>
+        {
+            if (elem.TryGetProperty(h, out var v))
+                return v.ValueKind == JsonValueKind.String
+                    ? $"\"{v.GetString().Replace("\"", "\"\"")}\""
+                    : v.GetRawText();
+            return "\"\"";
+        });
+        sb.AppendLine(string.Join(",", row));
+    }
+
+    return Results.Text(sb.ToString(), "text/csv");
+});
+
+
 app.Run();
